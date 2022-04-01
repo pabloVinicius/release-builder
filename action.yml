@@ -1,0 +1,12 @@
+name: 'Release builder'
+description: 'Action used to prepare a release PR'
+inputs:
+  token:
+    description: 'GitHub token'
+    required: true
+outputs:
+  changes:
+    description: 'Changes to update the PR description'
+runs:
+  using: 'node16'
+  main: 'index.js'

@@ -1,0 +1,25 @@
+{
+  "name": "release-builder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pabloVinicius/release-builder.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pabloVinicius/release-builder/issues"
+  },
+  "homepage": "https://github.com/pabloVinicius/release-builder#readme",
+  "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.0.1",
+    "@octokit/rest": "^18.12.0"
+  }
+}
