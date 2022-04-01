@@ -112,7 +112,7 @@ const writeChangelogFile = (content, path) => {
 
 const updatePullRequestDescription = (octokitClient, prNumber, repo, prDescription) => {
   octokitClient.rest.pulls.update({
-    repo,
+    ...repo,
     pull_number: prNumber,
     body: prDescription,
   });
