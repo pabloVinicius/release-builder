@@ -5,8 +5,8 @@ inputs:
     description: 'GitHub token'
     required: true
 outputs:
-  changes:
-    changelog: 'Changes to update the PR description'
+  changelog:
+    description: 'Changes to update the PR description'
 runs:
   using: 'node16'
   main: 'index.js'
