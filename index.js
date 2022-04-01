@@ -111,12 +111,11 @@ const writeChangelogFile = (content, path) => {
 }
 
 const main  = async () => {
-  const { ref, repo, payload } = github.context;
+  const { repo, payload } = github.context;
 
-  const context = JSON.stringify(github.context, undefined, 2);
-  console.log(`Context, ${context}`);
-  
-  const releaseVersion = ref.split('/').slice(-1)[0];
+  const { pull_request, repository } = payload;
+
+  const releaseVersion = pull_request.head.ref.split('/').slice(-1)[0];
 
   console.log(`Release version: ${releaseVersion}`)
 
@@ -127,7 +126,7 @@ const main  = async () => {
 
   const commits = await getCommits(octokit.rest, repo);
   const splitCommits = splitCommitsByType(commits);
-  const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, `${payload.repository.html_url}/pull`)
+  const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, `${repository.html_url}/pull`)
   console.log(`New version changelog: ${newVersionChangelog}`);
 
   writeChangelogFile(newVersionChangelog, "changelog.md");
