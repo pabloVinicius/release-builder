@@ -110,6 +110,14 @@ const writeChangelogFile = (content, path) => {
   }
 }
 
+const updatePullRequestDescription = (octokitClient, prNumber, repo, prDescription) => {
+  octokitClient.rest.pulls.update({
+    repo,
+    pull_number: prNumber,
+    body: prDescription,
+  });
+}
+
 const main  = async () => {
   const { repo, payload } = github.context;
 
@@ -129,6 +137,7 @@ const main  = async () => {
   const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, `${repository.html_url}/pull`)
   console.log(`New version changelog: ${newVersionChangelog}`);
 
+  updatePullRequestDescription(octokit, pull_request.number, repo, newVersionChangelog)
   writeChangelogFile(newVersionChangelog, "changelog.md");
 
   console.log(`Payload: ${payload}`)
