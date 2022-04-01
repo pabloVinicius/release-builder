@@ -121,7 +121,7 @@ const main  = async () => {
 
   const commits = await getCommits(octokit.rest, repo);
   const splitCommits = splitCommitsByType(commits);
-  const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, payload.repository.html_url)
+  const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, `${payload.repository.html_url}/pull`)
   console.log(`New version changelog: ${newVersionChangelog}`);
 
   writeChangelogFile(newVersionChangelog, "changelog.md");
