@@ -23,7 +23,7 @@ with:
 ```
 
 ## Todo
-- [] Unitary tests
-- [] Improve the overall code quality
-- [] Use Typescript
-- [] Improve logs
+- [ ] Unitary tests
+- [ ] Improve the overall code quality
+- [ ] Use Typescript
+- [ ] Improve logs
