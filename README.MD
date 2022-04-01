@@ -1,4 +1,4 @@
-# Hello world javascript action
+# Release Builder action
 
 This action setup a release by getting the merge commits, updating the version, updating the changelog file and the PR body.
 
