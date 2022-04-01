@@ -6,7 +6,7 @@ inputs:
     required: true
 outputs:
   changes:
-    description: 'Changes to update the PR description'
+    changelog: 'Changes to update the PR description'
 runs:
   using: 'node16'
   main: 'index.js'

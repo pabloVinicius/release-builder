@@ -1,6 +1,6 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
-const { Octokit } = require("@octokit/rest");
+const fs = require('fs');
 const exec = require('child_process').exec;
 
 const PR_TYPES = {
@@ -11,7 +11,6 @@ const PR_TYPES = {
 }
 
 const updateVersion = (version) => {
-  //  https://github.com/Reedyuk/NPM-Version/blob/master/index.js
   exec(`npm version ${version}`, (error, stdout, stderr) => {
     if(error != null) {
       core.setFailed(error);
@@ -64,38 +63,75 @@ const getCommits = async (octokitClient, repo) => {
   return commits;
 }
 
-const main  = () => {
-  const { ref, repo } = github.context;
-  const releaseNumber = ref.split('/').slice(-1)[0];
+const splitCommitsByType = (rawCommits) => {
+  const commits = {
+    FIX: [],
+    FEATURE: [],
+    IMPROVEMENT: [],
+  };
 
-  updateVersion(releaseNumber);
+  rawCommits.forEach((commit) => commits[commit.type].push(commit));
+
+  return commits;
+}
+
+const createChangelogContent = (commits, releaseVersion, repoUrl) => {
+  const { FIX: fixes, FEATURE: features, IMPROVEMENT: improvements } = commits;
+
+  const newVersionChangelog = `# v${releaseVersion}
+${features.length > 0 ? `
+**Features**
+${features.map(({ number, description }) => `- [#${number}](${repoUrl}/${number}) ${description}`).join("\n")}` : ""}
+${improvements.length > 0 ? `
+**Improvements**
+${improvements.map(({ number, description }) => `- [#${number}](${repoUrl}/${number}) ${description}`).join("\n")}` : ""}
+${fixes.length > 0 ? `
+**Fixes**
+${fixes.map(({ number, description }) => `- [#${number}](${repoUrl}/${number}) ${description}`).join("\n")}` : ""}
+`
+  return newVersionChangelog;
+}
+
+const writeChangelogFile = (content, path) => {
+  try {
+    const previousContentText = fs.readFileSync(path).toString();
+    const previousContentWithoutTitle = previousContentText.substring(previousContentText.indexOf("\n") + 1)
+      
+    const finalContent = `# Minded Patient UI\n\n${content}${previousContentWithoutTitle}`;
+    const finalContentBuffer = Buffer.from(finalContent);
+    
+    const fd = fs.openSync(path, 'w+');
+
+    fs.writeSync(fd, finalContentBuffer, 0, finalContentBuffer.length, 0);
+    fs.close(fd);
+  } catch (err) {
+    const finalContent = `# Minded Patient UI\n\n${content}`;
+    fs.writeFileSync(path, finalContent);
+  }
+}
+
+const main  = async () => {
+  const { ref, repo, payload } = github.context;
+  const releaseVersion = ref.split('/').slice(-1)[0];
+
+  updateVersion(releaseVersion);
 
   const token = core.getInput("token");
   const octokit = github.getOctokit(token);
 
-  getCommits(octokit.rest, repo);
-  
+  const commits = await getCommits(octokit.rest, repo);
+  const splitCommits = splitCommitsByType(commits);
+  const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, payload.repository.html_url)
+  console.log(`New version changelog: ${newVersionChangelog}`);
+
+  writeChangelogFile(newVersionChangelog, "changelog.md");
+
+  console.log(`Payload: ${payload}`)
+  core.setOutput('changelog', newVersionChangelog);
 }
 
-
 try {
-  // main()
-
-  (async () => {
-    const octokit = new Octokit({
-      auth: `token ${process.env.TOKEN}`
-    })
-  
-    const repo = {
-      owner: "pabloVinicius",
-      repo: "react-github-repositories"
-    }
-  
-    const commits = await getCommits(octokit, repo);
-  
-    console.log({ commits })
-
-  })()
+  main()
 } catch (error) {
   console.log({ error })
   core.setFailed(error.message)
