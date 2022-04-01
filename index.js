@@ -114,6 +114,8 @@ const main  = async () => {
   const { ref, repo, payload } = github.context;
   const releaseVersion = ref.split('/').slice(-1)[0];
 
+  console.log(`Release version: ${releaseVersion}`)
+
   updateVersion(releaseVersion);
 
   const token = core.getInput("token");
