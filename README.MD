@@ -21,3 +21,9 @@ uses: pabloVinicius/release-builder@v0.8
 with:
   token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## Todo
+- [] Unitary tests
+- [] Improve the overall code quality
+- [] Use Typescript
+- [] Improve logs
