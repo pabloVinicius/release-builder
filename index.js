@@ -112,6 +112,10 @@ const writeChangelogFile = (content, path) => {
 
 const main  = async () => {
   const { ref, repo, payload } = github.context;
+
+  const context = JSON.stringify(github.context, undefined, 2);
+  console.log(`Context, ${context}`);
+  
   const releaseVersion = ref.split('/').slice(-1)[0];
 
   console.log(`Release version: ${releaseVersion}`)
