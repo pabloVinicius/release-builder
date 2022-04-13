@@ -8,6 +8,7 @@ const PR_TYPES = {
   feat: "FEATURE",
   feature: "FEATURE",
   improve: "IMPROVEMENT",
+  others: "OTHERS"
 }
 
 const updateVersion = (version) => {
@@ -35,9 +36,9 @@ const getPrType = (prTitle) => {
   const type = Object.entries(PR_TYPES).reduce((acc, cur) => {
     const regex = new RegExp(cur[0], "g");
     return regex.test(lowerPrTitle) ? cur : acc;
-  }, undefined)[1];
+  }, undefined);
 
-  return type;
+  return type ? type[1] : PR_TYPES.others;
 }
 
 const getPrDescription = (prRawDescription) => prRawDescription.split(":").slice(-1)[0].trim();
@@ -76,7 +77,7 @@ const splitCommitsByType = (rawCommits) => {
 }
 
 const createChangelogContent = (commits, releaseVersion, repoUrl) => {
-  const { FIX: fixes, FEATURE: features, IMPROVEMENT: improvements } = commits;
+  const { FIX: fixes, FEATURE: features, IMPROVEMENT: improvements, OTHERS: others } = commits;
 
   const newVersionChangelog = `# v${releaseVersion}
 ${features.length > 0 ? `
@@ -88,6 +89,9 @@ ${improvements.map(({ number, description }) => `- [#${number}](${repoUrl}/${num
 ${fixes.length > 0 ? `
 **Fixes**
 ${fixes.map(({ number, description }) => `- [#${number}](${repoUrl}/${number}) ${description}`).join("\n")}` : ""}
+${others.length > 0 ? `
+**Others**
+${others.map(({ number, description }) => `- [#${number}](${repoUrl}/${number}) ${description}`).join("\n")}` : ""}
 `
   return newVersionChangelog;
 }
