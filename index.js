@@ -65,11 +65,10 @@ const getCommits = async (octokitClient, repo) => {
 }
 
 const splitCommitsByType = (rawCommits) => {
-  const commits = {
-    FIX: [],
-    FEATURE: [],
-    IMPROVEMENT: [],
-  };
+  const commits = Array.from(new Set(Object.values(PR_TYPES))).reduce((acc, cur) => {
+    acc[cur] = [];
+    return acc;
+  }, {});
 
   rawCommits.forEach((commit) => commits[commit.type].push(commit));
 
