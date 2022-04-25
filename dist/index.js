@@ -41,8 +41,44 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const github = __importStar(__nccwpck_require__(5438));
 const core = __importStar(__nccwpck_require__(2186));
-const fs = __nccwpck_require__(7147);
-const exec = (__nccwpck_require__(2081).exec);
+const utils_1 = __nccwpck_require__(1606);
+const main = () => __awaiter(void 0, void 0, void 0, function* () {
+    const { repo, payload } = github.context;
+    const { pull_request, repository } = payload;
+    const releaseVersion = pull_request.head.ref
+        .split("/")
+        .slice(-1)[0];
+    console.log(`Release version: ${releaseVersion}`);
+    (0, utils_1.updateProjectVersion)(releaseVersion);
+    const token = core.getInput("token");
+    const octokit = github.getOctokit(token);
+    const commits = yield (0, utils_1.getCommits)(octokit, repo);
+    const splitCommits = (0, utils_1.splitCommitsByType)(commits);
+    const newVersionChangelog = (0, utils_1.createChangelogContent)(splitCommits, releaseVersion, `${repository.html_url}/pull`);
+    console.log(`New version changelog: ${newVersionChangelog}`);
+    (0, utils_1.updatePullRequestDescription)(octokit, pull_request.number, repo, newVersionChangelog);
+    (0, utils_1.writeChangelogFile)(newVersionChangelog, "changelog.md");
+    console.log(`Payload: ${payload}`);
+    core.setOutput("changelog", newVersionChangelog);
+});
+try {
+    main();
+}
+catch (error) {
+    console.log({ error });
+    core.setFailed(error.message);
+}
+
+
+/***/ }),
+
+/***/ 8164:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PR_TYPES = void 0;
 var PR_TYPES;
 (function (PR_TYPES) {
     PR_TYPES["fix"] = "FIX";
@@ -51,51 +87,19 @@ var PR_TYPES;
     PR_TYPES["improve"] = "IMPROVEMENT";
     PR_TYPES["others"] = "OTHERS";
 })(PR_TYPES || (PR_TYPES = {}));
-const updateProjectVersion = (version) => {
-    exec(`npm version ${version}`, (error, stdout, stderr) => {
-        if (error != null) {
-            core.setFailed(error);
-        }
-        if (stderr != null) {
-            console.log(stderr);
-        }
-        console.log(stdout);
-    });
-};
-const getPrNumber = (prTitle) => {
-    const regex = /#[0-9]+/;
-    const [prNumber] = regex.exec(prTitle);
-    return prNumber.replace("#", "");
-};
-const getPrType = (prTitle) => {
-    const lowerPrTitle = prTitle.toLowerCase();
-    const type = Object.entries(PR_TYPES).reduce((acc, cur) => {
-        const regex = new RegExp(cur[0], "g");
-        return regex.test(lowerPrTitle) ? cur : acc;
-    });
-    return type ? type[1] : PR_TYPES.others;
-};
-const getPrDescription = (prRawDescription) => prRawDescription.split(":").slice(-1)[0].trim();
-const getCommits = (octokitClient, repo) => __awaiter(void 0, void 0, void 0, function* () {
-    const commitsRequest = yield octokitClient.rest.repos.compareCommitsWithBasehead(Object.assign(Object.assign({}, repo), { basehead: "staging...development" }));
-    const { commits: rawCommits } = commitsRequest.data;
-    const mergeCommits = rawCommits.filter(({ commit }) => /^Merge pull request/.test(commit.message));
-    const messages = mergeCommits.map(({ commit }) => commit.message.split("\n\n"));
-    const commits = messages.map(([prTitle, prRawDescription]) => ({
-        type: getPrType(prTitle),
-        number: getPrNumber(prTitle),
-        description: getPrDescription(prRawDescription),
-    }));
-    return commits;
-});
-const splitCommitsByType = (rawCommits) => {
-    const commits = Object.values(PR_TYPES).reduce((acc, cur) => {
-        acc[cur] = [];
-        return acc;
-    }, {});
-    rawCommits.forEach((commit) => commits[commit.type].push(commit));
-    return commits;
-};
+exports.PR_TYPES = PR_TYPES;
+
+
+/***/ }),
+
+/***/ 68:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.writeChangelogFile = exports.createChangelogContent = void 0;
+const fs = __nccwpck_require__(7147);
 const createChangelogContent = (commits, releaseVersion, repoUrl) => {
     const { FIX: fixes, FEATURE: features, IMPROVEMENT: improvements, OTHERS: others, } = commits;
     const newVersionChangelog = `# v${releaseVersion}
@@ -130,6 +134,7 @@ ${others
 `;
     return newVersionChangelog;
 };
+exports.createChangelogContent = createChangelogContent;
 const writeChangelogFile = (content, path) => {
     try {
         const previousContentText = fs.readFileSync(path).toString();
@@ -145,35 +150,159 @@ const writeChangelogFile = (content, path) => {
         fs.writeFileSync(path, finalContent);
     }
 };
+exports.writeChangelogFile = writeChangelogFile;
+
+
+/***/ }),
+
+/***/ 599:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateProjectVersion = void 0;
+const core = __importStar(__nccwpck_require__(2186));
+const exec = (__nccwpck_require__(2081).exec);
+const updateProjectVersion = (version) => {
+    exec(`npm version ${version}`, (error, stdout, stderr) => {
+        if (error != null) {
+            core.setFailed(error);
+        }
+        if (stderr != null) {
+            console.log(stderr);
+        }
+        console.log(stdout);
+    });
+};
+exports.updateProjectVersion = updateProjectVersion;
+
+
+/***/ }),
+
+/***/ 8679:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.splitCommitsByType = exports.getPrDescription = exports.getPrType = exports.getPrNumber = void 0;
+const types_1 = __nccwpck_require__(8164);
+const getPrNumber = (prTitle) => {
+    const regex = /#[0-9]+/;
+    const [prNumber] = regex.exec(prTitle);
+    return prNumber.replace("#", "");
+};
+exports.getPrNumber = getPrNumber;
+const getPrType = (prTitle) => {
+    const lowerPrTitle = prTitle.toLowerCase();
+    const type = Object.entries(types_1.PR_TYPES).reduce((acc, cur) => {
+        const regex = new RegExp(cur[0], "g");
+        return regex.test(lowerPrTitle) ? cur : acc;
+    });
+    return type ? type[1] : types_1.PR_TYPES.others;
+};
+exports.getPrType = getPrType;
+const getPrDescription = (prRawDescription) => prRawDescription.split(":").slice(-1)[0].trim();
+exports.getPrDescription = getPrDescription;
+const splitCommitsByType = (rawCommits) => {
+    const commits = Object.values(types_1.PR_TYPES).reduce((acc, cur) => {
+        acc[cur] = [];
+        return acc;
+    }, {});
+    rawCommits.forEach((commit) => commits[commit.type].push(commit));
+    return commits;
+};
+exports.splitCommitsByType = splitCommitsByType;
+
+
+/***/ }),
+
+/***/ 6863:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updatePullRequestDescription = exports.getCommits = void 0;
+const commons_1 = __nccwpck_require__(8679);
+const getCommits = (octokitClient, repo) => __awaiter(void 0, void 0, void 0, function* () {
+    const commitsRequest = yield octokitClient.rest.repos.compareCommitsWithBasehead(Object.assign(Object.assign({}, repo), { basehead: "staging...development" }));
+    const { commits: rawCommits } = commitsRequest.data;
+    const mergeCommits = rawCommits.filter(({ commit }) => /^Merge pull request/.test(commit.message));
+    const messages = mergeCommits.map(({ commit }) => commit.message.split("\n\n"));
+    const commits = messages.map(([prTitle, prRawDescription]) => ({
+        type: (0, commons_1.getPrType)(prTitle),
+        number: (0, commons_1.getPrNumber)(prTitle),
+        description: (0, commons_1.getPrDescription)(prRawDescription),
+    }));
+    return commits;
+});
+exports.getCommits = getCommits;
 const updatePullRequestDescription = (octokitClient, prNumber, repo, prDescription) => {
     octokitClient.rest.pulls.update(Object.assign(Object.assign({}, repo), { pull_number: prNumber, body: prDescription }));
 };
-const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    const { repo, payload } = github.context;
-    const { pull_request, repository } = payload;
-    const releaseVersion = pull_request.head.ref
-        .split("/")
-        .slice(-1)[0];
-    console.log(`Release version: ${releaseVersion}`);
-    updateProjectVersion(releaseVersion);
-    const token = core.getInput("token");
-    const octokit = github.getOctokit(token);
-    const commits = yield getCommits(octokit, repo);
-    const splitCommits = splitCommitsByType(commits);
-    const newVersionChangelog = createChangelogContent(splitCommits, releaseVersion, `${repository.html_url}/pull`);
-    console.log(`New version changelog: ${newVersionChangelog}`);
-    updatePullRequestDescription(octokit, pull_request.number, repo, newVersionChangelog);
-    writeChangelogFile(newVersionChangelog, "changelog.md");
-    console.log(`Payload: ${payload}`);
-    core.setOutput("changelog", newVersionChangelog);
-});
-try {
-    main();
-}
-catch (error) {
-    console.log({ error });
-    core.setFailed(error.message);
-}
+exports.updatePullRequestDescription = updatePullRequestDescription;
+
+
+/***/ }),
+
+/***/ 1606:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(68), exports);
+__exportStar(__nccwpck_require__(599), exports);
+__exportStar(__nccwpck_require__(8679), exports);
+__exportStar(__nccwpck_require__(6863), exports);
 
 
 /***/ }),
