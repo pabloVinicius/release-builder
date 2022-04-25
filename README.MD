@@ -24,7 +24,7 @@ with:
 
 ## Todo
 - [ ] Unitary tests
-- [ ] Improve the overall code quality
-- [ ] Use Typescript
 - [ ] Improve logs
-- [ ] [Build and publish ](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action#commit-tag-and-push-your-action-to-github)
+- [X] Improve the overall code quality
+- [X] Use Typescript
+- [X] [Build and publish](https://docs.github.com/en/actions/creating-actions/creating-a-javascript-action#commit-tag-and-push-your-action-to-github)
