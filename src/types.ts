@@ -26,4 +26,4 @@ type SplitCommits = Record<PR_TYPES, Array<Commit>>;
 type OctokitClient = ReturnType<typeof github.getOctokit>;
 
 export { PR_TYPES };
-export type {Repository, Commit, Commits, SplitCommits, OctokitClient}
+export type { Repository, Commit, Commits, SplitCommits, OctokitClient };
