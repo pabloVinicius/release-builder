@@ -156,47 +156,15 @@ exports.writeChangelogFile = writeChangelogFile;
 /***/ }),
 
 /***/ 599:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updateProjectVersion = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const exec = (__nccwpck_require__(2081).exec);
+const child_process_1 = __nccwpck_require__(2081);
 const updateProjectVersion = (version) => {
-    exec(`npm version ${version}`, (error, stdout, stderr) => {
-        if (error != null) {
-            core.setFailed(error);
-        }
-        if (stderr != null) {
-            console.log(stderr);
-        }
-        console.log(stdout);
-    });
+    (0, child_process_1.execSync)(`npm version ${version}`);
 };
 exports.updateProjectVersion = updateProjectVersion;
 
@@ -226,7 +194,7 @@ const getPrType = (prTitle) => {
     return type ? type[1] : types_1.PR_TYPES.others;
 };
 exports.getPrType = getPrType;
-const getPrDescription = (prRawDescription) => prRawDescription.split(":").slice(-1)[0].trim();
+const getPrDescription = (prRawDescription, type) => type === types_1.PR_TYPES.others ? prRawDescription : prRawDescription.split(":").slice(-1)[0].trim();
 exports.getPrDescription = getPrDescription;
 const splitCommitsByType = (rawCommits) => {
     const commits = Object.values(types_1.PR_TYPES).reduce((acc, cur) => {
@@ -258,16 +226,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.updatePullRequestDescription = exports.getCommits = void 0;
 const commons_1 = __nccwpck_require__(8679);
-const getCommits = (octokitClient, repo) => __awaiter(void 0, void 0, void 0, function* () {
-    const commitsRequest = yield octokitClient.rest.repos.compareCommitsWithBasehead(Object.assign(Object.assign({}, repo), { basehead: "staging...development" }));
+/**
+ * @todo Accept a list of branches to compare via config
+ */
+const getCommits = (octokitClient, repo, compareBranches = { base: "main", head: "development" }) => __awaiter(void 0, void 0, void 0, function* () {
+    const commitsRequest = yield octokitClient.rest.repos.compareCommitsWithBasehead(Object.assign(Object.assign({}, repo), { basehead: `${compareBranches.base}...${compareBranches.head}` }));
     const { commits: rawCommits } = commitsRequest.data;
     const mergeCommits = rawCommits.filter(({ commit }) => /^Merge pull request/.test(commit.message));
     const messages = mergeCommits.map(({ commit }) => commit.message.split("\n\n"));
-    const commits = messages.map(([prTitle, prRawDescription]) => ({
-        type: (0, commons_1.getPrType)(prTitle),
-        number: (0, commons_1.getPrNumber)(prTitle),
-        description: (0, commons_1.getPrDescription)(prRawDescription),
-    }));
+    const commits = messages.map(([prTitle, prRawDescription]) => {
+        const type = (0, commons_1.getPrType)(prTitle);
+        return {
+            type,
+            number: (0, commons_1.getPrNumber)(prTitle),
+            description: (0, commons_1.getPrDescription)(prRawDescription, type),
+        };
+    });
     return commits;
 });
 exports.getCommits = getCommits;
