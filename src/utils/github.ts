@@ -22,11 +22,14 @@ const getCommits = async (
     commit.message.split("\n\n")
   );
 
-  const commits = messages.map(([prTitle, prRawDescription]) => ({
-    type: getPrType(prTitle),
-    number: getPrNumber(prTitle),
-    description: getPrDescription(prRawDescription),
-  }));
+  const commits = messages.map(([prTitle, prRawDescription]) => {
+    const type =  getPrType(prTitle);
+    return {
+      type,
+      number: getPrNumber(prTitle),
+      description: getPrDescription(prRawDescription, type),
+    };
+  });
 
   return commits;
 };
