@@ -19,8 +19,7 @@ const getPrType = (prTitle: string): PR_TYPES => {
   return type ? type[1] : PR_TYPES.others;
 };
 
-const getPrDescription = (prRawDescription) =>
-  prRawDescription.split(":").slice(-1)[0].trim();
+const getPrDescription = (prRawDescription, type) => type === PR_TYPES.others ? prRawDescription : prRawDescription.split(":").slice(-1)[0].trim();
 
 const splitCommitsByType = (rawCommits: Commits): SplitCommits => {
   const commits = Object.values(PR_TYPES).reduce((acc, cur) => {
